@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bella Cucina | Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="login-wrapper">
+    <div class="login-box">
+      <h2>Admin Login</h2>
+      <p>Enter the owner password to access the dashboard.</p>
+      <form id="loginForm">
+        <input type="password" id="adminPassword" placeholder="Hint: admin123" required />
+        <p id="loginError" class="error-msg"></p>
+        <button type="submit" class="btn-primary">Access Dashboard</button>
+      </form>
+      <a href="index.html" class="back-link">&larr; Back to Website</a>
+    </div>
+  </div>
+
+  <!-- DASHBOARD WRAPPER -->
+  <div id="dashboardWrapper" class="dashboard-wrapper" style="display: none;">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Admin Panel</h2>
+        <span>Bella Cucina</span>
+      </div>
+      <ul class="sidebar-nav">
+        <li><button class="nav-btn active" data-target="announcements">Announcements</button></li>
+        <li><button class="nav-btn" data-target="menu">Manage Menu</button></li>
+        <li><button class="nav-btn" data-target="reservations">Reservations</button></li>
+      </ul>
+      <div class="sidebar-footer">
+        <button id="logoutBtn" class="btn-outline">Log Out</button>
+        <a href="index.html" target="_blank" class="site-link">View Live Site &nearr;</a>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      
+      <!-- ANNOUNCEMENTS TAB -->
+      <section id="announcements" class="tab-content active">
+        <div class="header-flex">
+          <div>
+            <h1>Announcements</h1>
+            <p class="card-desc">Configure a floating toast notification for your website visitors.</p>
+          </div>
+        </div>
+
+        <!-- PREVIEW CARD -->
+        <div class="card" style="margin-bottom: 32px; padding: 24px 30px; background: #f8fafc; border-color: #cbd5e1;">
+          <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--text-main);">Live Preview & Status</h3>
+          <div id="announcePreviewStatus" style="font-size: 14.5px; margin-bottom: 12px;">
+            <strong style="color: var(--text-light);">Loading status...</strong>
+          </div>
+          <div id="announcePreviewText" style="font-size: 15px; color: var(--text-main); padding: 16px; background: var(--white); border-radius: 8px; border: 1px solid var(--border); border-left: 4px solid var(--gold); display: none; margin-bottom: 0;"></div>
+        </div>
+
+        <div class="card">
+          <p class="card-desc">Publish a banner announcement that will appear on the website. Set the active toggle and select a duration before saving.</p>
+          <form id="announcementForm">
+            
+            <div class="form-group">
+              <label for="announceText">Announcement Message</label>
+              <textarea id="announceText" rows="3" placeholder="e.g. Don't miss our weekend special! 20% off all dining reservations." required></textarea>
+            </div>
+
+            <div class="form-row" style="grid-template-columns: 1fr 1fr; gap: 24px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Set Duration</label>
+                <div class="duration-inputs" style="display: flex; gap: 8px;">
+                  <input type="number" id="announceDays" min="0" value="0" placeholder="Day" title="Days" />
+                  <input type="number" id="announceHours" min="0" value="24" placeholder="Hr" title="Hours" />
+                  <input type="number" id="announceMinutes" min="0" value="0" placeholder="Min" title="Minutes" />
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 6px;">
+                <div class="checkbox-group" style="margin-bottom: 12px;">
+                  <input type="checkbox" id="announceRepeat" />
+                  <label for="announceRepeat">Auto-repeat when timer ends</label>
+                </div>
+                <div class="checkbox-group" style="margin-bottom: 0;">
+                  <input type="checkbox" id="announceActive" />
+                  <label for="announceActive"><strong>Make announcement Active</strong></label>
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-top: 32px; display: flex; align-items: center; gap: 16px;">
+              <button type="submit" class="btn-primary" style="padding-left: 32px; padding-right: 32px;">Save Announcement</button>
+              <span id="announceSuccess" class="success-msg">Settings saved!</span>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- MENU TAB -->
+      <section id="menu" class="tab-content">
+        <div class="header-flex">
+          <h1>Manage Menu</h1>
+          <button id="resetMenuBtn" class="btn-danger">Reset to Default Menu</button>
+        </div>
+        <div class="card">
+          <p class="card-desc">Add or remove items from your live menu. Note: Select category before adding.</p>
+          
+          <div class="menu-editor-controls">
+            <select id="menuCategorySelect">
+              <option value="starters">Starters</option>
+              <option value="pasta">Pasta</option>
+              <option value="pizza">Pizza</option>
+              <option value="mains">Mains</option>
+              <option value="desserts">Desserts</option>
+              <option value="drinks">Drinks</option>
+            </select>
+          </div>
+
+          <div class="add-item-form">
+            <h3>Add New Item</h3>
+            <form id="addMenuForm">
+              <div class="form-row">
+                <input type="text" id="itemName" placeholder="Dish Name (e.g. Focaccia)" required />
+                <input type="text" id="itemPrice" placeholder="Price (e.g. $8)" required />
+                <select id="itemBadge">
+                  <option value="">No Badge</option>
+                  <option value="veg">Vegetarian</option>
+                  <option value="spicy">Spicy</option>
+                  <option value="chef">Chef's Special</option>
+                </select>
+              </div>
+              <textarea id="itemDesc" placeholder="Description of the dish..." required></textarea>
+              <button type="submit" class="btn-primary">Add to Category</button>
+            </form>
+          </div>
+
+          <div class="menu-list-wrapper">
+            <h3>Current Items in <span id="currentCategoryLabel">Starters</span></h3>
+            <ul id="adminMenuList" class="admin-menu-list">
+              <!-- Rendered via JS -->
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- RESERVATIONS TAB -->
+      <section id="reservations" class="tab-content">
+        <div class="header-flex">
+          <h1>Reservations</h1>
+          <button id="clearResBtn" class="btn-outline">Clear All</button>
+        </div>
+        <div class="card">
+          <p class="card-desc">Recent reservation requests submitted via the website.</p>
+          <div class="table-responsive">
+            <table class="res-table">
+              <thead>
+                <tr>
+                  <th>Date & Time</th>
+                  <th>Name</th>
+                  <th>Contact</th>
+                  <th>Guests</th>
+                  <th>Requests</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="resTableBody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+            <p id="noResMsg" class="empty-state">No reservations found.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

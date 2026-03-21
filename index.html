@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Bella Cucina – Authentic Italian dining in the heart of the city. Book a table or browse our full menu."/>
+  <title>Bella Cucina | Italian Restaurant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- ANNOUNCEMENT POPUP -->
+  <div id="announcementOverlay" class="announcement-overlay" style="display: none;">
+    <div class="announcement-popup">
+      <h3 style="margin-bottom: 8px; font-size: 16px; color: var(--gold); font-family: var(--font-heading);">Announcement</h3>
+      <p id="announcementText" style="line-height: 1.4; font-size: 14px; color: var(--text-dark); margin-bottom: 0;"></p>
+      <button id="closeAnnouncement" class="close-popup" aria-label="Close Announcement">&times;</button>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="logo">Bella Cucina</a>
+      <ul class="nav-links">
+        <li><a href="#about">About</a></li>
+        <li><a href="#menu">Menu</a></li>
+        <li><a href="#gallery">Gallery</a></li>
+        <li><a href="#hours">Hours</a></li>
+        <li><a href="#reserve" class="btn-nav">Reserve a Table</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="home">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <p class="hero-tagline">EST. 2009 · ROME-INSPIRED</p>
+      <h1>Authentic Flavors,<br/>Unforgettable Moments</h1>
+      <p class="hero-sub">Hand-crafted pasta, wood-fired pizzas, and seasonal Italian dishes made with love.</p>
+      <div class="hero-btns">
+        <a href="#menu" class="btn-primary">View Menu</a>
+        <a href="#reserve" class="btn-outline">Book a Table</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="about" id="about">
+    <div class="container grid-2">
+      <div class="about-text">
+        <span class="section-label">Our Story</span>
+        <h2>More than a meal — it's an experience</h2>
+        <p>Bella Cucina was born from a simple idea: bring the warmth of an Italian grandmother's kitchen to our city. Chef Marco Rossi spent 12 years cooking across Florence, Naples, and Rome before opening our doors in 2009.</p>
+        <p>Every dish is made from scratch using imported DOP ingredients, fresh local produce, and recipes passed down for generations.</p>
+        <a href="#menu" class="btn-primary">Explore Our Menu</a>
+      </div>
+      <div class="about-image">
+        <img src="images/chef.png" alt="Chef Marco Rossi in the kitchen" class="chef-img" />
+      </div>
+    </div>
+  </section>
+
+  <!-- MENU -->
+  <section class="menu-section" id="menu">
+    <div class="container">
+      <span class="section-label">What We Serve</span>
+      <h2>Our Menu</h2>
+      <div class="menu-tabs">
+        <button class="tab-btn active" data-tab="starters">Starters</button>
+        <button class="tab-btn" data-tab="pasta">Pasta</button>
+        <button class="tab-btn" data-tab="pizza">Pizza</button>
+        <button class="tab-btn" data-tab="mains">Mains</button>
+        <button class="tab-btn" data-tab="desserts">Desserts</button>
+        <button class="tab-btn" data-tab="drinks">Drinks</button>
+      </div>
+
+      <div class="menu-grid" id="menu-items"></div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section class="gallery" id="gallery">
+    <div class="container">
+      <span class="section-label">From Our Kitchen</span>
+      <h2>A Taste in Every Photo</h2>
+      <div class="gallery-grid">
+        <div class="gallery-item big">
+          <img src="images/gallery-1.png" alt="Pasta dish" />
+        </div>
+        <div class="gallery-item">
+          <img src="images/gallery-2.png" alt="Neapolitan Pizza" />
+        </div>
+        <div class="gallery-item">
+          <img src="images/gallery-4.png" alt="Aperol Spritz and Wine" />
+        </div>
+        <div class="gallery-item">
+          <img src="images/gallery-3.png" alt="Steak and Potatoes" />
+        </div>
+        <div class="gallery-item big2">
+          <img src="images/gallery-2.png" alt="Another Neapolitan Pizza" />
+        </div>
+        <div class="gallery-item">
+          <img src="images/gallery-1.png" alt="Pasta dish duplicate for grid" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOURS -->
+  <section class="hours-section" id="hours">
+    <div class="container grid-2">
+      <div class="hours-info">
+        <span class="section-label">Find Us</span>
+        <h2>Hours & Location</h2>
+        <table class="hours-table">
+          <tr><td>Monday – Tuesday</td><td>Closed</td></tr>
+          <tr><td>Wednesday – Friday</td><td>12:00 – 22:30</td></tr>
+          <tr><td>Saturday</td><td>11:00 – 23:00</td></tr>
+          <tr><td>Sunday</td><td>11:00 – 21:00</td></tr>
+        </table>
+        <p class="address">📍 42 Vineyard Lane, Downtown · (555) 304-8812</p>
+      </div>
+      <div class="map-placeholder">
+        <iframe 
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.285899981381!2d-73.98773168459422!3d40.75571127932696!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c259aa24c8b981%3A0xe9f79e95a3b918af!2sTimes%20Square!5e0!3m2!1sen!2sus!4v1684784119854!5m2!1sen!2sus" 
+          width="100%" 
+          height="340" 
+          style="border:0; border-radius: 12px;" 
+          allowfullscreen="" 
+          loading="lazy" 
+          referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESERVATION -->
+  <section class="reserve-section" id="reserve">
+    <div class="container">
+      <span class="section-label">Reservations</span>
+      <h2>Book Your Table</h2>
+      <form class="reserve-form" id="reserveForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fname">First Name</label>
+            <input type="text" id="fname" name="fname" placeholder="Marco" required/>
+          </div>
+          <div class="form-group">
+            <label for="lname">Last Name</label>
+            <input type="text" id="lname" name="lname" placeholder="Rossi" required/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="you@email.com" required/>
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone</label>
+            <input type="tel" id="phone" name="phone" placeholder="(555) 000-0000"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" name="date" required/>
+          </div>
+          <div class="form-group">
+            <label for="time">Time</label>
+            <select id="time" name="time" required>
+              <option value="">Select time</option>
+              <option value="12:00 PM">12:00 PM</option>
+              <option value="12:30 PM">12:30 PM</option>
+              <option value="1:00 PM">1:00 PM</option>
+              <option value="6:00 PM">6:00 PM</option>
+              <option value="6:30 PM">6:30 PM</option>
+              <option value="7:00 PM">7:00 PM</option>
+              <option value="7:30 PM">7:30 PM</option>
+              <option value="8:00 PM">8:00 PM</option>
+              <option value="8:30 PM">8:30 PM</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="guests">Guests</label>
+            <select id="guests" name="guests" required>
+              <option value="">Guests</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6+">6+</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label for="notes">Special Requests</label>
+          <textarea id="notes" name="notes" rows="3" placeholder="Allergies, celebrations, seating preferences..."></textarea>
+        </div>
+        <button type="submit" class="btn-primary submit-btn">Confirm Reservation</button>
+        <p class="form-success" id="formSuccess">✅ Reservation request submitted! We'll send you an email shortly.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <p class="footer-logo">Bella Cucina</p>
+      <p>42 Vineyard Lane · (555) 304-8812 · info@bellacucina.com</p>
+      <div class="socials">
+        <a href="#">Instagram</a>
+        <a href="#">Facebook</a>
+        <a href="#">Yelp</a>
+      </div>
+      <p class="copyright">© 2024 Bella Cucina. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
