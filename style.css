@@ -389,6 +389,10 @@ img.chef-img {
   font-family: 'Playfair Display', serif;
   font-size: 18px;
   color: var(--brown);
+  word-break: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
 }
 
 .menu-card .price {
@@ -402,6 +406,8 @@ img.chef-img {
 .menu-card p {
   font-size: 13.5px;
   color: var(--light-text);
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .menu-card .badge {
@@ -411,6 +417,9 @@ img.chef-img {
   border-radius: 20px;
   margin-top: 10px;
   font-weight: 500;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .badge.veg { background: #e8f5e9; color: #2e7d32; }
