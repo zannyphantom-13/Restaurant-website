@@ -251,6 +251,11 @@ addMenuForm.addEventListener('submit', async (e) => {
     desc: document.getElementById('itemDesc').value,
     badge: document.getElementById('itemBadge').value
   };
+  
+  if (!menuData[cat]) {
+    menuData[cat] = [];
+  }
+  
   menuData[cat].push(newItem);
   await set(ref(db, 'menu'), menuData);
   addMenuForm.reset();
