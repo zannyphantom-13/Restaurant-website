@@ -252,7 +252,8 @@ input:focus, textarea:focus, select:focus {
 }
 .admin-menu-list li:last-child { border: none; }
 .menu-item-info strong { display: block; font-size: 15.5px; color: var(--text-main); margin-bottom: 4px; }
-.menu-item-info span { font-size: 14px; color: var(--text-light); }
+.menu-item-info { flex: 1; min-width: 0; padding-right: 16px; }
+.menu-item-info span { font-size: 14px; color: var(--text-light); word-break: break-word; overflow-wrap: break-word; display: block; }
 .del-btn { background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 14px; font-weight: 500; opacity: 0.8; transition: 0.2s;}
 .del-btn:hover { opacity: 1; text-decoration: underline; }
 

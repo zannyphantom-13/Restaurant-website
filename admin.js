@@ -222,7 +222,7 @@ function renderAdminMenu() {
     li.innerHTML = `
       <div class="menu-item-info">
         <strong>${item.name} <span style="font-weight:normal;color:#c9972b;">${item.price}</span></strong>
-        <span>${item.desc.substring(0, 50)}...</span>
+        <span>${item.desc.length > 90 ? item.desc.substring(0, 90) + '…' : item.desc}</span>
       </div>
       <button class="del-btn" data-cat="${cat}" data-index="${index}">Delete</button>
     `;
