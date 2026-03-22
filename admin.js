@@ -263,53 +263,144 @@ document.getElementById('resetMenuBtn').addEventListener('click', async () => {
   }
 });
 
-// 7. Reservations
-const resTableBody = document.getElementById('resTableBody');
+// 7. Reservations — Premium Card UI
+const resCardsGrid = document.getElementById('resCardsGrid');
 const noResMsg = document.getElementById('noResMsg');
-const resTable = document.querySelector('.res-table');
+let currentFilter = 'all';
+
+function isToday(dateStr) {
+  const today = new Date().toISOString().slice(0, 10);
+  return dateStr === today;
+}
+
+function isUpcoming(dateStr) {
+  return dateStr && dateStr >= new Date().toISOString().slice(0, 10);
+}
+
+function updateResStats() {
+  const unread = reservations.filter(r => !r.read).length;
+  const today  = reservations.filter(r => isToday(r.date)).length;
+  const guests = reservations.reduce((sum, r) => sum + (parseInt(r.guests) || 0), 0);
+
+  document.getElementById('statTotal').textContent  = reservations.length;
+  document.getElementById('statUnread').textContent = unread;
+  document.getElementById('statToday').textContent  = today;
+  document.getElementById('statGuests').textContent = guests;
+
+  const badge = document.getElementById('resBadge');
+  if (unread > 0) {
+    badge.textContent = `${unread} new`;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function getFilteredReservations() {
+  if (currentFilter === 'unread')   return reservations.filter(r => !r.read);
+  if (currentFilter === 'upcoming') return reservations.filter(r => isUpcoming(r.date));
+  return reservations;
+}
 
 function renderReservations() {
-  resTableBody.innerHTML = '';
-  if (!reservations || reservations.length === 0) {
-    noResMsg.style.display = 'block';
-    resTable.style.display = 'none';
-  } else {
-    noResMsg.style.display = 'none';
-    resTable.style.display = 'table';
-    const reversed = [...reservations].reverse();
-    reversed.forEach((res, i) => {
-      const originalIndex = reservations.length - 1 - i;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><strong>${res.date}</strong><br/>${res.time}</td>
-        <td>${res.fname} ${res.lname}</td>
-        <td>${res.email}<br/>${res.phone}</td>
-        <td>${res.guests}</td>
-        <td><small>${res.notes || 'None'}</small></td>
-        <td><button class="del-btn" data-index="${originalIndex}">Remove</button></td>
-      `;
-      resTableBody.appendChild(tr);
-    });
+  resCardsGrid.innerHTML = '';
+  const list = getFilteredReservations().slice().reverse();
 
-    resTableBody.querySelectorAll('.del-btn').forEach(btn => {
-      btn.addEventListener('click', () => deleteRes(parseInt(btn.dataset.index)));
-    });
+  updateResStats();
+
+  if (list.length === 0) {
+    noResMsg.style.display = 'block';
+    resCardsGrid.style.display = 'none';
+    return;
   }
+
+  noResMsg.style.display = 'none';
+  resCardsGrid.style.display = 'grid';
+
+  list.forEach((res) => {
+    const originalIndex = reservations.findIndex(r => r.submittedAt === res.submittedAt);
+    const card = document.createElement('div');
+    card.className = `res-card ${res.read ? '' : 'unread'}`;
+    card.innerHTML = `
+      <div class="res-card-header">
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${!res.read ? '<div class="unread-dot"></div>' : ''}
+          <span class="res-card-name">${res.fname} ${res.lname}</span>
+        </div>
+        <span class="res-card-date">${res.date} at ${res.time}</span>
+      </div>
+      <div class="res-card-meta">
+        <div class="res-meta-item">
+          <span class="label">Email</span>
+          <span class="value">${res.email}</span>
+        </div>
+        <div class="res-meta-item">
+          <span class="label">Phone</span>
+          <span class="value">${res.phone}</span>
+        </div>
+        <div class="res-meta-item">
+          <span class="label">Guests</span>
+          <span class="value">${res.guests} people</span>
+        </div>
+        <div class="res-meta-item">
+          <span class="label">Submitted</span>
+          <span class="value">${res.submittedAt ? new Date(res.submittedAt).toLocaleDateString() : '—'}</span>
+        </div>
+      </div>
+      ${res.notes ? `<div class="res-card-notes">📝 ${res.notes}</div>` : ''}
+      <div class="res-card-actions">
+        ${!res.read ? `<button class="btn-read" data-index="${originalIndex}">✓ Mark Read</button>` : `<button disabled style="opacity:0.4;cursor:default">✓ Read</button>`}
+        <button class="btn-delete" data-index="${originalIndex}">🗑 Delete</button>
+      </div>
+    `;
+    resCardsGrid.appendChild(card);
+  });
+
+  // Bind action buttons
+  resCardsGrid.querySelectorAll('.btn-read').forEach(btn => {
+    btn.addEventListener('click', () => markAsRead(parseInt(btn.dataset.index)));
+  });
+  resCardsGrid.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', () => deleteRes(parseInt(btn.dataset.index)));
+  });
+}
+
+async function markAsRead(index) {
+  reservations[index].read = true;
+  const resObj = {};
+  reservations.forEach((r, i) => { resObj[i] = r; });
+  await set(ref(db, 'reservations'), resObj);
 }
 
 async function deleteRes(index) {
   if (confirm('Remove this reservation?')) {
     reservations.splice(index, 1);
-    // Re-index reservations as a flat object for Firebase
     const resObj = {};
     reservations.forEach((r, i) => { resObj[i] = r; });
     await set(ref(db, 'reservations'), reservations.length ? resObj : null);
   }
 }
 
+document.getElementById('markAllReadBtn').addEventListener('click', async () => {
+  reservations.forEach(r => r.read = true);
+  const resObj = {};
+  reservations.forEach((r, i) => { resObj[i] = r; });
+  await set(ref(db, 'reservations'), resObj);
+});
+
 document.getElementById('clearResBtn').addEventListener('click', async () => {
-  if (confirm('Delete ALL reservations?')) {
+  if (confirm('Delete ALL reservations permanently? This cannot be undone.')) {
     reservations = [];
     await set(ref(db, 'reservations'), null);
   }
+});
+
+// Filter button switching
+document.querySelectorAll('.res-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.res-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderReservations();
+  });
 });

@@ -153,30 +153,48 @@
       <!-- RESERVATIONS TAB -->
       <section id="reservations" class="tab-content">
         <div class="header-flex">
-          <h1>Reservations</h1>
-          <button id="clearResBtn" class="btn-outline">Clear All</button>
-        </div>
-        <div class="card">
-          <p class="card-desc">Recent reservation requests submitted via the website.</p>
-          <div class="table-responsive">
-            <table class="res-table">
-              <thead>
-                <tr>
-                  <th>Date & Time</th>
-                  <th>Name</th>
-                  <th>Contact</th>
-                  <th>Guests</th>
-                  <th>Requests</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="resTableBody">
-                <!-- Rendered via JS -->
-              </tbody>
-            </table>
-            <p id="noResMsg" class="empty-state">No reservations found.</p>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <h1>Reservations</h1>
+            <span id="resBadge" class="res-badge" style="display:none;"></span>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button id="markAllReadBtn" class="btn-outline">Mark All Read</button>
+            <button id="clearResBtn" class="btn-danger">Delete All</button>
           </div>
         </div>
+
+        <!-- Stats Strip -->
+        <div class="res-stats-strip">
+          <div class="res-stat">
+            <span id="statTotal">0</span>
+            <label>Total</label>
+          </div>
+          <div class="res-stat">
+            <span id="statUnread">0</span>
+            <label>Unread</label>
+          </div>
+          <div class="res-stat">
+            <span id="statToday">0</span>
+            <label>Today</label>
+          </div>
+          <div class="res-stat">
+            <span id="statGuests">0</span>
+            <label>Total Guests</label>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="res-filter-bar">
+          <button class="res-filter-btn active" data-filter="all">All</button>
+          <button class="res-filter-btn" data-filter="unread">Unread</button>
+          <button class="res-filter-btn" data-filter="upcoming">Upcoming</button>
+        </div>
+
+        <!-- Reservation Cards Grid -->
+        <div id="resCardsGrid" class="res-cards-grid">
+          <!-- Rendered via JS -->
+        </div>
+        <p id="noResMsg" class="empty-state" style="display:none;">No reservations found.</p>
       </section>
 
     </main>
