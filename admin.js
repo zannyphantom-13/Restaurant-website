@@ -1,3 +1,5 @@
+import { db, ref, set, get, onValue } from './firebase-config.js';
+
 // Default Initial Menu Data (Backup)
 const defaultMenuData = {
   starters: [
@@ -38,10 +40,10 @@ const defaultMenuData = {
   ]
 };
 
-// State Data Initialization
-let menuData = JSON.parse(localStorage.getItem('restaurantMenu')) || defaultMenuData;
-let reservations = JSON.parse(localStorage.getItem('restaurantReservations')) || [];
-let announcement = JSON.parse(localStorage.getItem('restaurantAnnouncement')) || { text: '', active: false };
+// State
+let menuData = JSON.parse(JSON.stringify(defaultMenuData));
+let reservations = [];
+let announcement = { text: '', active: false };
 
 // UI Elements
 const loginScreen = document.getElementById('loginScreen');
@@ -50,7 +52,7 @@ const loginForm = document.getElementById('loginForm');
 const loginError = document.getElementById('loginError');
 const logoutBtn = document.getElementById('logoutBtn');
 
-// 1. Authentication Check
+// 1. Auth Check
 if (sessionStorage.getItem('adminLoggedIn') === 'true') {
   showDashboard();
 }
@@ -58,7 +60,7 @@ if (sessionStorage.getItem('adminLoggedIn') === 'true') {
 loginForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const pwd = document.getElementById('adminPassword').value;
-  if(pwd === 'admin123') {
+  if (pwd === 'admin123') {
     sessionStorage.setItem('adminLoggedIn', 'true');
     showDashboard();
   } else {
@@ -80,98 +82,99 @@ function showDashboard() {
   initDashboard();
 }
 
-// 2. Tabs Navigation
+// 2. Tab Navigation
 const navBtns = document.querySelectorAll('.nav-btn');
 const tabContents = document.querySelectorAll('.tab-content');
-
 navBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     navBtns.forEach(b => b.classList.remove('active'));
     tabContents.forEach(c => c.classList.remove('active'));
-    
     btn.classList.add('active');
     document.getElementById(btn.dataset.target).classList.add('active');
   });
 });
 
-// --- Live Announcement Preview ---
+// 3. Live Preview
 function updateAnnouncementPreview() {
   const previewStatus = document.getElementById('announcePreviewStatus');
   const previewText = document.getElementById('announcePreviewText');
-  
   if (!announcement || !announcement.active || !announcement.text || announcement.text.trim() === '') {
-    previewStatus.innerHTML = '<strong style="color: var(--danger);">Inactive</strong> <span style="color: var(--text-light);">- No announcement is currently displayed to visitors.</span>';
+    previewStatus.innerHTML = '<strong style="color:#ef4444;">Inactive</strong> <span style="color:var(--text-light);">- No announcement is currently displayed.</span>';
     previewText.style.display = 'none';
     return;
   }
-  
   const now = Date.now();
   let timeRemaining = announcement.expiresAt ? announcement.expiresAt - now : 0;
-  
   if (timeRemaining <= 0) {
     if (announcement.repeat) {
-      previewStatus.innerHTML = '<strong style="color: #3b82f6;">Cycling (Auto-Repeat)</strong> <span style="color: var(--text-light);">- Timer is rolling over automatically.</span>';
+      previewStatus.innerHTML = '<strong style="color:#3b82f6;">Cycling (Auto-Repeat)</strong> <span style="color:var(--text-light);">- Timer is rolling over.</span>';
       previewText.textContent = announcement.text;
       previewText.style.display = 'block';
     } else {
-      previewStatus.innerHTML = '<strong style="color: var(--danger);">Expired</strong> <span style="color: var(--text-light);">- The duration has ended. Visitors no longer see this.</span>';
+      previewStatus.innerHTML = '<strong style="color:#ef4444;">Expired</strong> <span style="color:var(--text-light);">- Duration ended. Visitors no longer see this.</span>';
       previewText.style.display = 'none';
     }
     return;
   }
-  
   const d = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
   const h = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24);
   const m = Math.floor((timeRemaining / 1000 / 60) % 60);
   const s = Math.floor((timeRemaining / 1000) % 60);
-  
   let timeStr = '';
   if (d > 0) timeStr += `${d}d `;
   if (h > 0 || d > 0) timeStr += `${h}h `;
   if (m > 0 || h > 0 || d > 0) timeStr += `${m}m `;
   timeStr += `${s}s`;
-  
-  const repeatBadge = announcement.repeat ? '<span style="font-size:11px; background:#dbeafe; color:#1e40af; padding:3px 8px; border-radius:12px; margin-left:8px; font-weight:600;">Auto-Repeats</span>' : '';
-  
-  previewStatus.innerHTML = `<strong style="color: #10b981;">Active</strong> <span style="color: var(--text-main);">- Time remaining: <code>${timeStr}</code></span> ${repeatBadge}`;
+  const repeatBadge = announcement.repeat
+    ? '<span style="font-size:11px;background:#dbeafe;color:#1e40af;padding:3px 8px;border-radius:12px;margin-left:8px;font-weight:600;">Auto-Repeats</span>'
+    : '';
+  previewStatus.innerHTML = `<strong style="color:#10b981;">Active</strong> <span style="color:var(--text-main);">- Time remaining: <code>${timeStr}</code></span> ${repeatBadge}`;
   previewText.textContent = announcement.text;
   previewText.style.display = 'block';
 }
 
-// 3. Init Dashboard Data
-function initDashboard() {
-  // Announcements
-  document.getElementById('announceText').value = announcement.text || '';
-  document.getElementById('announceActive').checked = announcement.active || false;
-  document.getElementById('announceRepeat').checked = announcement.repeat || false;
-  document.getElementById('announceDays').value = announcement.durationDays || 0;
-  document.getElementById('announceHours').value = announcement.durationHours !== undefined ? announcement.durationHours : 24;
-  document.getElementById('announceMinutes').value = announcement.durationMinutes || 0;
-  
-  updateAnnouncementPreview();
+// 4. Init Dashboard — load everything from Firebase
+async function initDashboard() {
+  // Listen for real-time announcement changes
+  onValue(ref(db, 'announcement'), (snapshot) => {
+    announcement = snapshot.val() || { text: '', active: false };
+    document.getElementById('announceText').value = announcement.text || '';
+    document.getElementById('announceActive').checked = announcement.active || false;
+    document.getElementById('announceRepeat').checked = announcement.repeat || false;
+    document.getElementById('announceDays').value = announcement.durationDays || 0;
+    document.getElementById('announceHours').value = announcement.durationHours !== undefined ? announcement.durationHours : 24;
+    document.getElementById('announceMinutes').value = announcement.durationMinutes || 0;
+    updateAnnouncementPreview();
+  });
+
+  // Listen for real-time menu changes
+  onValue(ref(db, 'menu'), (snapshot) => {
+    const data = snapshot.val();
+    menuData = data || JSON.parse(JSON.stringify(defaultMenuData));
+    renderAdminMenu();
+  });
+
+  // Listen for real-time reservation changes
+  onValue(ref(db, 'reservations'), (snapshot) => {
+    const data = snapshot.val();
+    reservations = data ? Object.values(data) : [];
+    renderReservations();
+  });
+
   setInterval(updateAnnouncementPreview, 1000);
-  
-  // Menu
-  renderAdminMenu();
-  
-  // Reservations
-  renderReservations();
 }
 
-// 4. Announcements Logic
+// 5. Announcements Form
 const announceForm = document.getElementById('announcementForm');
 if (announceForm) {
-  announceForm.addEventListener('submit', (e) => {
+  announceForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
     try {
       const days = parseInt(document.getElementById('announceDays').value) || 0;
-      const hrs = parseInt(document.getElementById('announceHours').value) || 0;
+      const hrs  = parseInt(document.getElementById('announceHours').value) || 0;
       const mins = parseInt(document.getElementById('announceMinutes').value) || 0;
-      
       const durationMs = (days * 86400 + hrs * 3600 + mins * 60) * 1000;
-      const expiresTimestamp = Date.now() + durationMs;
-      
+
       announcement = {
         id: 'ann_' + Date.now(),
         text: document.getElementById('announceText').value,
@@ -180,32 +183,32 @@ if (announceForm) {
         durationDays: days,
         durationHours: hrs,
         durationMinutes: mins,
-        durationMs: durationMs,
-        expiresAt: expiresTimestamp
+        durationMs,
+        expiresAt: Date.now() + durationMs
       };
-      
-      localStorage.setItem('restaurantAnnouncement', JSON.stringify(announcement));
+
+      await set(ref(db, 'announcement'), announcement);
       updateAnnouncementPreview();
-      
+
       const success = document.getElementById('announceSuccess');
       if (success) {
         success.style.display = 'block';
         setTimeout(() => success.style.display = 'none', 3000);
       }
-    } catch(err) {
+    } catch (err) {
       console.error("Failed to save announcement:", err);
+      alert("Error saving announcement. Check Firebase console.");
     }
   });
 }
 
-// 5. Menu Editor Logic
+// 6. Menu Editor
 const catSelect = document.getElementById('menuCategorySelect');
 const addMenuForm = document.getElementById('addMenuForm');
 const adminMenuList = document.getElementById('adminMenuList');
 const currentCatLabel = document.getElementById('currentCategoryLabel');
 
 catSelect.addEventListener('change', (e) => {
-  const cat = e.target.value;
   currentCatLabel.textContent = e.target.options[e.target.selectedIndex].text;
   renderAdminMenu();
 });
@@ -213,29 +216,32 @@ catSelect.addEventListener('change', (e) => {
 function renderAdminMenu() {
   const cat = catSelect.value;
   adminMenuList.innerHTML = '';
-  
-  menuData[cat].forEach((item, index) => {
+  const items = (menuData && menuData[cat]) ? menuData[cat] : [];
+  items.forEach((item, index) => {
     const li = document.createElement('li');
     li.innerHTML = `
       <div class="menu-item-info">
         <strong>${item.name} <span style="font-weight:normal;color:#c9972b;">${item.price}</span></strong>
         <span>${item.desc.substring(0, 50)}...</span>
       </div>
-      <button class="del-btn" onclick="deleteMenuItem('${cat}', ${index})">Delete</button>
+      <button class="del-btn" data-cat="${cat}" data-index="${index}">Delete</button>
     `;
     adminMenuList.appendChild(li);
   });
+
+  adminMenuList.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteMenuItem(btn.dataset.cat, parseInt(btn.dataset.index)));
+  });
 }
 
-window.deleteMenuItem = function(cat, index) {
-  if(confirm('Are you sure you want to delete this item?')) {
+async function deleteMenuItem(cat, index) {
+  if (confirm('Are you sure you want to delete this item?')) {
     menuData[cat].splice(index, 1);
-    localStorage.setItem('restaurantMenu', JSON.stringify(menuData));
-    renderAdminMenu();
+    await set(ref(db, 'menu'), menuData);
   }
 }
 
-addMenuForm.addEventListener('submit', (e) => {
+addMenuForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const cat = catSelect.value;
   const newItem = {
@@ -245,40 +251,33 @@ addMenuForm.addEventListener('submit', (e) => {
     desc: document.getElementById('itemDesc').value,
     badge: document.getElementById('itemBadge').value
   };
-  
   menuData[cat].push(newItem);
-  localStorage.setItem('restaurantMenu', JSON.stringify(menuData));
-  renderAdminMenu();
+  await set(ref(db, 'menu'), menuData);
   addMenuForm.reset();
 });
 
-document.getElementById('resetMenuBtn').addEventListener('click', () => {
-  if(confirm('This will wipe all menu edits and restore the default menu. Continue?')) {
-    localStorage.removeItem('restaurantMenu');
-    menuData = JSON.parse(JSON.stringify(defaultMenuData)); // deep copy
-    renderAdminMenu();
+document.getElementById('resetMenuBtn').addEventListener('click', async () => {
+  if (confirm('This will wipe all menu edits and restore the default menu. Continue?')) {
+    menuData = JSON.parse(JSON.stringify(defaultMenuData));
+    await set(ref(db, 'menu'), menuData);
   }
 });
 
-// 6. Reservations Logic
+// 7. Reservations
 const resTableBody = document.getElementById('resTableBody');
 const noResMsg = document.getElementById('noResMsg');
 const resTable = document.querySelector('.res-table');
 
 function renderReservations() {
   resTableBody.innerHTML = '';
-  if (reservations.length === 0) {
+  if (!reservations || reservations.length === 0) {
     noResMsg.style.display = 'block';
     resTable.style.display = 'none';
   } else {
     noResMsg.style.display = 'none';
     resTable.style.display = 'table';
-    
-    // Reverse to show newest first
     const reversed = [...reservations].reverse();
-    
     reversed.forEach((res, i) => {
-      // Use original index for deletion to avoid mismatch
       const originalIndex = reservations.length - 1 - i;
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -287,25 +286,30 @@ function renderReservations() {
         <td>${res.email}<br/>${res.phone}</td>
         <td>${res.guests}</td>
         <td><small>${res.notes || 'None'}</small></td>
-        <td><button class="del-btn" onclick="deleteRes(${originalIndex})">Remove</button></td>
+        <td><button class="del-btn" data-index="${originalIndex}">Remove</button></td>
       `;
       resTableBody.appendChild(tr);
+    });
+
+    resTableBody.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteRes(parseInt(btn.dataset.index)));
     });
   }
 }
 
-window.deleteRes = function(index) {
-  if(confirm('Remove this reservation?')) {
+async function deleteRes(index) {
+  if (confirm('Remove this reservation?')) {
     reservations.splice(index, 1);
-    localStorage.setItem('restaurantReservations', JSON.stringify(reservations));
-    renderReservations();
+    // Re-index reservations as a flat object for Firebase
+    const resObj = {};
+    reservations.forEach((r, i) => { resObj[i] = r; });
+    await set(ref(db, 'reservations'), reservations.length ? resObj : null);
   }
 }
 
-document.getElementById('clearResBtn').addEventListener('click', () => {
-  if(confirm('Delete ALL reservations pending?')) {
+document.getElementById('clearResBtn').addEventListener('click', async () => {
+  if (confirm('Delete ALL reservations?')) {
     reservations = [];
-    localStorage.setItem('restaurantReservations', JSON.stringify(reservations));
-    renderReservations();
+    await set(ref(db, 'reservations'), null);
   }
 });

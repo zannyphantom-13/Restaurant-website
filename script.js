@@ -1,3 +1,6 @@
+import { db, ref, get, onValue, set } from './firebase-config.js';
+
+// --- Default Menu Fallback ---
 const defaultMenuData = {
   starters: [
     { name: "Bruschetta al Pomodoro", price: "$12", desc: "Toasted artisanal bread, vine-ripened tomatoes, garlic, fresh basil, extra virgin olive oil.", badge: "veg" },
@@ -37,98 +40,36 @@ const defaultMenuData = {
   ]
 };
 
-// Check for Custom Admin Data
-const menuData = JSON.parse(localStorage.getItem('restaurantMenu')) || defaultMenuData;
+// --- State ---
+let menuData = JSON.parse(JSON.stringify(defaultMenuData));
+let announcement = null;
 
-// Handle Announcements
-const announcement = JSON.parse(localStorage.getItem('restaurantAnnouncement'));
-const dismissedId = sessionStorage.getItem('bannerDismissedId');
-
-// Helper to safely check if banner should be active
-function shouldShowBanner() {
-  if (!announcement || !announcement.active) return false;
-  
-  const text = announcement.text || '';
-  if (text.trim() === '') return false;
-  
-  // Evaluate expiration & repeat logic
-  if (announcement.expiresAt && Date.now() > announcement.expiresAt) {
-    if (announcement.repeat && announcement.durationMs > 0) {
-      // It expired, but it repeats. Roll the timer forward.
-      while (Date.now() > announcement.expiresAt) {
-        announcement.expiresAt += announcement.durationMs;
-      }
-      // Forcefully generate a new ID so users who dismissed the old cycle see it again
-      announcement.id = 'ann_' + Date.now();
-      localStorage.setItem('restaurantAnnouncement', JSON.stringify(announcement));
-    } else {
-      return false; // Expired and no repeat
-    }
-  }
-
-  // Check manual dismissal by user (after resolving repeat cycle IDs)
-  if (announcement.id && dismissedId === announcement.id) return false;
-  if (!announcement.id && dismissedId === 'true') return false; // Legacy fallback
-  
-  return true;
-}
-
-if (shouldShowBanner()) {
-  document.getElementById('announcementOverlay').style.display = 'flex';
-  document.getElementById('announcementText').textContent = announcement.text;
-}
-
-// Banner Close Button
-const closeBannerBtn = document.getElementById('closeAnnouncement');
-if (closeBannerBtn) {
-  closeBannerBtn.addEventListener('click', () => {
-    document.getElementById('announcementOverlay').style.display = 'none';
-    if (announcement && announcement.id) {
-      sessionStorage.setItem('bannerDismissedId', announcement.id);
-    } else {
-      sessionStorage.setItem('bannerDismissedId', 'true');
-    }
-  });
-}
-
-// Navbar Scroll Effect
+// --- Navbar Scroll ---
 const navbar = document.getElementById('navbar');
-
 function updateNavbarPosition() {
-  if (window.scrollY > 50) {
-    navbar.classList.add('scrolled');
-  } else {
-    navbar.classList.remove('scrolled');
-  }
+  navbar.classList.toggle('scrolled', window.scrollY > 50);
 }
-
 window.addEventListener('scroll', updateNavbarPosition);
 window.addEventListener('resize', updateNavbarPosition);
-// Initial check
 updateNavbarPosition();
 
-// Mobile Hamburger Menu Toggle
+// --- Mobile Menu ---
 const hamburger = document.getElementById('hamburger');
 const navLinks = document.querySelector('.nav-links');
+hamburger.addEventListener('click', () => navLinks.classList.toggle('open'));
 
-hamburger.addEventListener('click', () => {
-  navLinks.classList.toggle('open');
-});
-
-// Menu Tabs Logic
+// --- Menu Tabs ---
 const tabBtns = document.querySelectorAll('.tab-btn');
 const menuContainer = document.getElementById('menu-items');
 
 function renderMenu(category) {
   menuContainer.innerHTML = '';
-  const items = menuData[category];
-  
+  const items = (menuData && menuData[category]) ? menuData[category] : [];
   items.forEach(item => {
     let badgeHtml = '';
-    if (item.badge === 'veg') badgeHtml = `<span class="badge veg">Vegetarian</span>`;
+    if (item.badge === 'veg')   badgeHtml = `<span class="badge veg">Vegetarian</span>`;
     if (item.badge === 'spicy') badgeHtml = `<span class="badge spicy">Spicy</span>`;
-    if (item.badge === 'chef') badgeHtml = `<span class="badge chef">Chef's Special</span>`;
-
+    if (item.badge === 'chef')  badgeHtml = `<span class="badge chef">Chef's Special</span>`;
     const card = document.createElement('div');
     card.className = 'menu-card';
     card.innerHTML = `
@@ -143,34 +84,84 @@ function renderMenu(category) {
   });
 }
 
-// Initial Render
+// Initial render from default, then override from Firebase
 renderMenu('starters');
 
 tabBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    // Remove active class from all
     tabBtns.forEach(b => b.classList.remove('active'));
-    // Add active class to clicked
     btn.classList.add('active');
-    // Render
     renderMenu(btn.dataset.tab);
   });
 });
 
-// Reservation Form Submission Simulation
+// --- Firebase: Live Menu Sync ---
+onValue(ref(db, 'menu'), (snapshot) => {
+  const data = snapshot.val();
+  if (data) {
+    menuData = data;
+    // Re-render the currently active tab
+    const activeTab = document.querySelector('.tab-btn.active');
+    renderMenu(activeTab ? activeTab.dataset.tab : 'starters');
+  }
+});
+
+// --- Firebase: Live Announcement Sync ---
+function evaluateAnnouncement(ann) {
+  if (!ann || !ann.active || !ann.text || ann.text.trim() === '') return false;
+  if (ann.expiresAt && Date.now() > ann.expiresAt) {
+    if (ann.repeat && ann.durationMs > 0) {
+      // Roll timer forward (write back to Firebase)
+      while (Date.now() > ann.expiresAt) ann.expiresAt += ann.durationMs;
+      ann.id = 'ann_' + Date.now();
+      set(ref(db, 'announcement'), ann);
+    } else {
+      return false;
+    }
+  }
+  const dismissedId = sessionStorage.getItem('bannerDismissedId');
+  if (ann.id && dismissedId === ann.id) return false;
+  return true;
+}
+
+onValue(ref(db, 'announcement'), (snapshot) => {
+  announcement = snapshot.val();
+  const overlay = document.getElementById('announcementOverlay');
+  const textEl = document.getElementById('announcementText');
+  if (!overlay || !textEl) return;
+
+  if (evaluateAnnouncement(announcement)) {
+    textEl.textContent = announcement.text;
+    overlay.style.display = 'flex';
+  } else {
+    overlay.style.display = 'none';
+  }
+});
+
+// --- Announcement Close ---
+const closeBannerBtn = document.getElementById('closeAnnouncement');
+if (closeBannerBtn) {
+  closeBannerBtn.addEventListener('click', () => {
+    document.getElementById('announcementOverlay').style.display = 'none';
+    if (announcement && announcement.id) {
+      sessionStorage.setItem('bannerDismissedId', announcement.id);
+    } else {
+      sessionStorage.setItem('bannerDismissedId', 'true');
+    }
+  });
+}
+
+// --- Reservation Form ---
 const form = document.getElementById('reserveForm');
 const successMsg = document.getElementById('formSuccess');
 
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  
   const submitBtn = form.querySelector('.submit-btn');
   const originalText = submitBtn.textContent;
   submitBtn.textContent = "Processing...";
   submitBtn.disabled = true;
 
-  // Save to local storage for Admin Panel BEFORE fetch 
-  // so placeholder Formspree URLs don't break the demo functionality.
   const resData = {
     fname: document.getElementById('fname').value,
     lname: document.getElementById('lname').value,
@@ -179,45 +170,33 @@ form.addEventListener('submit', (e) => {
     date: document.getElementById('date').value,
     time: document.getElementById('time').value,
     guests: document.getElementById('guests').value,
-    notes: document.getElementById('notes').value
+    notes: document.getElementById('notes').value,
+    submittedAt: Date.now()
   };
-  const savedRes = JSON.parse(localStorage.getItem('restaurantReservations')) || [];
-  savedRes.push(resData);
-  localStorage.setItem('restaurantReservations', JSON.stringify(savedRes));
 
+  try {
+    // Save to Firebase Realtime Database
+    const currentSnap = await get(ref(db, 'reservations'));
+    const current = currentSnap.val() || {};
+    const newIndex = Object.keys(current).length;
+    await set(ref(db, `reservations/${newIndex}`), resData);
+  } catch (err) {
+    console.warn("Firebase save failed, reservations not stored:", err);
+  }
+
+  // Also attempt Formspree
   const formData = new FormData(form);
-
   fetch(form.action, {
     method: form.method,
     body: formData,
-    headers: {
-        'Accept': 'application/json'
-    }
-  }).then(response => {
-    submitBtn.textContent = originalText;
-    submitBtn.disabled = false;
-    
-    // We consider it a success for the demo even if the placeholder fetch 404s
-    form.reset();
-    successMsg.textContent = "✅ Reservation request submitted! We'll send you an email shortly.";
-    successMsg.style.color = "#2e7d32";
-    successMsg.style.display = 'block';
-    
-    setTimeout(() => {
-      successMsg.style.display = 'none';
-    }, 5000);
-  }).catch(error => {
-    submitBtn.textContent = originalText;
-    submitBtn.disabled = false;
-    
-    // Fallback UI success for portfolio purposes 
-    form.reset();
-    successMsg.textContent = "✅ Reservation request submitted (Offline mode).";
-    successMsg.style.color = "#2e7d32";
-    successMsg.style.display = 'block';
-    
-    setTimeout(() => {
-        successMsg.style.display = 'none';
-    }, 5000);
-  });
+    headers: { 'Accept': 'application/json' }
+  }).catch(() => {});
+
+  submitBtn.textContent = originalText;
+  submitBtn.disabled = false;
+  form.reset();
+  successMsg.textContent = "✅ Reservation submitted! We'll email you a confirmation shortly.";
+  successMsg.style.color = "#2e7d32";
+  successMsg.style.display = 'block';
+  setTimeout(() => successMsg.style.display = 'none', 5000);
 });
