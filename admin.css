@@ -474,6 +474,8 @@ input:focus, textarea:focus, select:focus {
   font-size: 13.5px;
   color: var(--text-main);
   font-weight: 500;
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .res-card-notes {
@@ -484,6 +486,9 @@ input:focus, textarea:focus, select:focus {
   padding: 8px 12px;
   border-left: 3px solid var(--border);
   font-style: italic;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .res-card-actions {
